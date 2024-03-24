@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Frontend</title>
+</head>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@300&display=swap');
+    body{
+        font-family: 'Open Sans', sans-serif;
+        text-align: center;
+    }
+    #blogosmall {
+        text-decoration: none;
+        font-size: 15px;
+        text-align: right;
+        margin-bottom: 16px;
+        font-weight: 800;
+    }
+    #profilepic {
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        margin-top: 2vh;
+    }
+    button {
+        padding: 12px 36px;
+        margin: 16px;
+        background-color: #E71B63;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-family: 'Open Sans', sans-serif;
+    }
+    button:hover {
+        background-color: #F46396;
+    }
+    #logo {
+        color: #E71B63;
+        margin-bottom: 0;
+    }
+    #container {
+        border-radius: 5px;
+        padding: 16px;
+        margin-left: 50px;
+        margin-right: 50px;
+        background-color: white;
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    }
+
+    table {
+        background-color: rgb(5, 5, 5);
+        height: 100%;
+        width: 100%;
+        left: 0;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        position: absolute;
+    }
+
+    form {
+        margin-top: 16px;
+    }
+    form input {
+        outline: 0;
+        border-width: 0 0 2px;
+        font-size: 13px;
+        font-family: 'Open Sans', sans-serif;
+        font-weight: bold;
+        width: 150px;
+        transition: all 0.3s ease 0s;
+    }
+
+    form input:focus {
+        border-color: #E71B63;
+        width: 250px;
+    }
+
+    .logoimg {
+        width: 35vw;
+        height: 25vh;
+    }
+
+    #supercont {
+        background-color: #E71B63;
+    }
+
+    .onlyicon {
+        width: 45px;
+        height: 45px;
+    }
+    .navbar-basic {
+        left: 0;
+        top: 0;
+        width: 100%;
+        position: fixed;
+        height: 12px;
+    }
+
+    .navbar-basic ul {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background-color: rgb(5, 5, 5);
+        box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+    }
+
+    .navbar-basic li {
+        float: left;
+    }
+
+    .navbar-basic li a {
+        display: block;
+        color: #E71B63;
+        text-align: center;
+        padding: 14px 16px;
+        font-size: 16px;
+        font-weight: 750;
+        margin-top: 2vh;
+        text-decoration: none;
+        transition: all 0.3s ease 0s;
+    }
+
+    .navbar-basic li a:hover {
+        font-weight: bold;
+        color: #f2f2f2;
+    }
+
+    .navbar-basic .logo {
+        padding: 0px 32px 0px 0px;
+        margin-right: 32px;
+    }
+    #cam {
+        display: none;
+    }
+</style>
+<body>
+    <table>
+        <tr>
+            <th id="logocont">
+                <img src="logo.svg" class="logoimg">
+            </th>
+            <th id="supercont">
+                <div id="cam">
+                    <button id="start-camera">Start Camera</button>
+                    <video id="video" width="320" height="240" autoplay></video>
+                    <button id="click-photo">Click Photo</button>
+                    <canvas id="canvas" width="320" height="240"></canvas>
+
+                    <script>
+                        let camera_button = document.querySelector("#start-camera");
+                        let video = document.querySelector("#video");
+                        let click_button = document.querySelector("#click-photo");
+                        let canvas = document.querySelector("#canvas");
+
+                        camera_button.addEventListener('click', async function() {
+                            let stream = await navigator.mediaDevices.getUserMedia({video: true, audio: false});
+                            video.srcObject = stream;
+                            stream.getTracks().forEach(track => track.stop());
+                        });
+
+                        click_button.addEventListener('click', function() {
+                            canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                            let image_data_url = canvas.toDataURL('image/jpeg');
+                            console.log(image_data_url);
+
+                            // stream.getTracks().forEach(track => track.stop());
+                        });
+                    </script>
+                </div>
+                <div id="container"></div>
+            </th>
+        </tr>
+    </table>
+    <script type="text/javascript">
+        var container = document.getElementById("container");
+        var currentResponse;
+        var token;
+        var cameraWindowVisible = false;
+        const ROOT_API_URL = "http://127.0.0.1:8000/";
+        const USER_MANAGEMENT_API_URL = ROOT_API_URL+"user-management/";
+        const CREDIT_CARD_MANAGEMENT_API_URL = ROOT_API_URL+"creditcard-management/";
+
+        function login(uname, pswd) {
+            const creds = {
+                username: uname,
+                password: pswd
+            }
+
+            return fetch(USER_MANAGEMENT_API_URL+"login/", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": 'Basic ' + btoa(`${creds.username}:${creds.password}`),
+                },
+                body: JSON.stringify(creds),
+            }).then(response => {
+                if (!response.ok) {
+                    console.error(response.text());
+                }
+                response = response.json().then(responseJSON => window.token = responseJSON.token).then(x => x = userinfo());
+            });
+        }
+
+        function userinfo() {
+            console.log("usserinfo:");
+            console.log(token);
+
+            const moreUserInfoResponse = fetch(USER_MANAGEMENT_API_URL+"user-info/", {
+                method: "GET",
+                headers: {
+                    "Authorization": `Token ${window.token}`,
+                },
+            }).then(response => response.json().then(responseJSON => createDashboard(responseJSON)));
+        }
+
+        async function logout() {
+            const logoutResponse = await fetch(USER_MANAGEMENT_API_URL+"logout/",{
+                method: "POST",
+                headers: {
+                    "Authorization": `Token ${window.token}`,
+                },
+            });
+
+            if (logoutResponse.status != 204) {
+                console.error(logoutResponse.text());
+            }
+            token = null;
+            return logoutResponse;
+        }
+
+        function logoutWrapper() {
+            let logoutResult = logout();
+
+            if (!logoutResult) {
+                alert("logout failed!");
+                console.log(token);
+                return -1;
+            }
+
+            container.innerHTML = "";
+            createLoginForm();
+
+        }
+
+        function loginWrapper() {
+            let uname = document.getElementById("loginformusername").value;
+            let pswd = document.getElementById("loginformpassword").value;
+
+            let loginResult = login(uname, pswd);
+
+            if (!loginResult) {
+                console.log("Login failed!");
+                return -1;
+            } else {
+                console.log("Logged in successfully");
+            }
+
+            container.innerHTML = "";
+            let userDetails = userinfo();
+        }
+
+        function creditcardHTML(obj) {
+            let cardParent = document.createElement("div");
+            let card = document.createElement("div");
+            card.style.boxShadow = "0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19)";
+            card.style.borderRadius = "12px";
+            card.style.color = "white";
+            card.style.backgroundColor = "rgb(5, 5, 5)";
+            card.style.width = "200%";
+            card.style.padding = "16px";
+
+            let cardNumber = document.createElement("p");
+            cardNumber.innerHTML = obj.card_no;
+            cardNumber.innerHTML += "<br>";
+            cardNumber.innerHTML += obj.expiry;
+
+            let cardHolder = document.createElement("p");
+            cardHolder.innerHTML = obj.user;
+
+            let onlyIcon = document.createElement("img");
+            onlyIcon.setAttribute("src", "only_icon.png");
+            onlyIcon.setAttribute("class", "onlyicon");
+
+            card.setAttribute("title", `CVV = ${obj.cvv}`);
+            card.appendChild(onlyIcon);
+            card.appendChild(cardNumber);
+            
+            card.appendChild(cardHolder);
+            cardParent.appendChild(card);
+
+            return card;
+
+        }
+
+        function createLoginForm() {
+
+            container.style.marginTop = "0";
+
+            document.getElementById("logocont").style.display = 'table-cell';
+
+            let onlyIcon = document.createElement("img");
+            onlyIcon.setAttribute("src", "only_icon.png");
+            onlyIcon.setAttribute("class", "onlyicon");
+
+            let heading = document.createElement("h1");
+            heading.innerHTML = "Virtual Credit Card Service";
+            heading.setAttribute("id", "logo");
+
+            let pby = document.createElement("a");
+            pby.innerHTML = "By Some Random Bank";
+            pby.setAttribute("id", "blogosmall");
+
+            let form = document.createElement("form");
+            form.setAttribute("id", "loginform");
+            form.setAttribute("autocomplete", "off");
+
+            let username = document.createElement("input");
+            username.setAttribute("type", "text");
+            username.setAttribute("placeholder", "Username");
+            username.setAttribute("id", "loginformusername");
+
+            let password = document.createElement("input");
+            password.setAttribute("type", "password");
+            password.setAttribute("placeholder", "Password");
+            password.setAttribute("id", "loginformpassword");
+
+            let loginBtn = document.createElement("button");
+            loginBtn.innerHTML = "Login";
+            loginBtn.addEventListener("click", loginWrapper);
+
+            container.appendChild(onlyIcon);
+            container.appendChild(heading);
+            container.appendChild(pby);
+            form.appendChild(username);
+            form.innerHTML += "<br>";
+            form.appendChild(password);
+            form.innerHTML += "<br>";
+            form.appendChild(loginBtn);
+            container.appendChild(form);
+        }
+
+        function toggleCameraWindow() {
+            let cameraDiv = document.getElementById("cam");
+
+            if (cameraWindowVisible === false) {
+                cameraDiv.style.display = "block";
+                cameraWindowVisible = true;
+            } else {
+                cameraDiv.style.display = "none";
+                cameraWindowVisible = false;
+            }
+        }
+
+        function createDashboard(obj) {
+
+            document.getElementById("logocont").style.display = 'none';
+            container.style.marginTop = "12vh";
+
+            let navbar = document.createElement("div");
+            navbar.setAttribute("class", "navbar-basic");
+
+            // undefined check
+            if (obj.avatar === undefined) {
+                console.log("createDashboard: Rejected obj");
+                return -1;
+            }
+
+            let navbarUL = document.createElement("ul");
+
+            let profilePicLI = document.createElement("li");
+            let profilePic = document.createElement("img");
+            profilePic.setAttribute("src", ROOT_API_URL+obj.avatar);
+            profilePic.setAttribute("id", "profilepic");
+            // profilePic.setAttribute("class", "logo");
+
+            let usernameLI = document.createElement("li");
+            let username = document.createElement("a");
+            username.innerHTML = obj.user;
+
+            let email = document.createElement("p");
+            email.innerHTML = obj.email;
+            email.innerHTML += "<br>"
+            email.innerHTML += obj.bio;
+
+            let logoutBtnLI = document.createElement("li");
+            let logoutBtn = document.createElement("button");
+            logoutBtn.innerHTML = "Logout";
+            logoutBtn.addEventListener("click", logoutWrapper);
+            logoutBtn.setAttribute("id", "lgtbtn");
+            logoutBtnLI.style.float = "right";
+
+            let issueNewCardLI = document.createElement("li");
+            let issueNewCardBtn = document.createElement("button");
+            issueNewCardBtn.innerHTML = "Issue New Card";
+            issueNewCardBtn.addEventListener("click", toggleCameraWindow);
+
+            issueNewCardLI.appendChild(issueNewCardBtn);
+
+            profilePicLI.appendChild(profilePic);
+            usernameLI.appendChild(username);
+            logoutBtnLI.appendChild(logoutBtn);
+
+            navbarUL.appendChild(profilePicLI);
+            navbarUL.appendChild(usernameLI);
+            navbarUL.appendChild(issueNewCardLI);
+            navbarUL.appendChild(logoutBtnLI);
+            
+            navbar.appendChild(navbarUL);
+
+            let testP = document.createElement("p");
+            testP.innerHTML =  "No cards have been issued to you as of now.";
+
+            let moreCardsResponse = fetch(CREDIT_CARD_MANAGEMENT_API_URL, {
+                method: "GET",
+                headers: {
+                    "Authorization": `Token ${window.token}`,
+                }
+            }).then(response => response.json().then(responseJSON => {
+                testP.innerHTML = "Currently issued cards";
+
+                let cardList = document.createElement("ul");
+                cardList.style.listStyleType = "none";
+                cardList.style.display = "flex";
+                cardList.style.flexDirection = "column";
+                cardList.style.justifyContent = "space-evenly";
+                cardList.style.alignItems = "center";
+
+                for (let i = 0; i < responseJSON.length; i++) {
+                    let card = creditcardHTML(responseJSON[i]);
+                    let cardLI = document.createElement("li");
+                    cardLI.style.margin = "10px";
+                    cardLI.appendChild(card);
+                    cardList.appendChild(cardLI);
+                }
+
+                container.appendChild(cardList);
+            }));
+
+            container.appendChild(navbar);
+            container.appendChild(email);
+            container.appendChild(testP);
+        }
+        createLoginForm();
+    </script>
+</body>
+</html>

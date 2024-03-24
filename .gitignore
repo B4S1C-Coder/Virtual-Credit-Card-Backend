@@ -1,0 +1,11 @@
+chrome_flag.txt
+temporary_frontend_hosting
+env
+creds.txt
+initial_data.json
+logo_details.txt
+reqs_curl.txt
+test_client.output.log.txt
+media/tmp
+media/user_avatars/profile_pic.jpg
+user_management/__pycache__
